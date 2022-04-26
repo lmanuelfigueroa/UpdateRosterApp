@@ -1,10 +1,13 @@
 import javax.swing.JComboBox;
 import java.awt.event.*;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
@@ -15,6 +18,7 @@ import javax.swing.JLabel;
 import java.awt.*;
 import javax.swing.*;
 import java.util.List;
+import java.util.Scanner;
 
 
 
@@ -32,7 +36,14 @@ public class Main implements ActionListener {
     private JFileChooser rosterFileChooser = new JFileChooser();
     private JFileChooser eventFileChooser = new JFileChooser();
     private String path = "C:\\Users\\lmanu\\OneDrive\\Desktop\\Project";
+    private String roster_filepath = null;
+    private List<String> peopleList = new ArrayList<String>();
+    private static final int STUDENT_UNION = 15;
+    private static final int SPB = 25;
+    private static final int TABLING_EVENT = 10;
+    private static final int STUDENT_GOVERMENT = 20;
 
+    
     void GUI() {
         
 
@@ -159,8 +170,9 @@ public class Main implements ActionListener {
             this.rosterFileChooser.setCurrentDirectory(new File(this.path));
             int  roster_response = this.rosterFileChooser.showOpenDialog(null);
             if(roster_response == JFileChooser.APPROVE_OPTION){
-                this.roster_file = new File(this.rosterFileChooser.getSelectedFile().getAbsolutePath());
-                System.out.println(this.roster_file);
+                this.roster_filepath = this.rosterFileChooser.getSelectedFile().getAbsolutePath();
+                this.roster_file = new File(this.roster_filepath);
+            
             }
         }
         
@@ -171,36 +183,131 @@ public class Main implements ActionListener {
 
             if(event_response == JFileChooser.APPROVE_OPTION){
                 this.event_file = new File(this.eventFileChooser.getSelectedFile().getAbsolutePath());
-                BufferedReader br;
-                List<Person> peopleList = new ArrayList<Person>();
-                try {
-                    br = new BufferedReader((new FileReader(this.event_file)));
-                    String line = null;
-                    br.readLine();
-                    while((line = br.readLine()) != null){
-                        String[] elements = line.split(",");
-                        Person newPerson = new Person(elements[0],elements[1],elements[2]);
-                        peopleList.add(newPerson);    
+               
 
-                    }
+                BufferedReader bf;
+                try {
+                    bf = new BufferedReader(new FileReader(this.event_file));
                     
-    
+                    String line = bf.readLine();
+                    while((line  = bf.readLine()) != null){
+                        String[] elements = line.split(",");
+                        this.peopleList.add(elements[0] + " " + elements[1]);
+
+                }
+
+
                 } catch (FileNotFoundException e1) {
                    
-                    System.out.println("File Not Found");
                     e1.printStackTrace();
                 } catch (IOException e1) {
                     
-                    System.out.println("Input Error");
                     e1.printStackTrace();
                 }
                 
-            
             }
             
         }
         else if (e.getSource() == this.submitButton){
-            System.out.println("submit button");
+            System.out.println("Submit button\n\n");
+            String tempfile = path + "\\temp.csv";
+            File newFile = new File(tempfile);
+
+
+            BufferedReader rosterReader;
+            
+                
+           try {
+                rosterReader = new BufferedReader((new FileReader(this.roster_file)));
+                
+                
+                rosterReader.readLine();
+               
+
+
+                FileWriter fw = new FileWriter(tempfile,true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter pw = new PrintWriter(bw);
+                Scanner scanner = new Scanner(this.roster_file);
+                scanner.useDelimiter("[,\n]");
+                String temp_id = null;
+                String temp_first_name =null;
+                String temp_last_name = null;
+                String temp_email = null;
+                String temp_gender = null;
+                String temp_points = null;
+                String temp_full_name = null;
+
+
+                String id_field = scanner.next();
+                String first_name_field = scanner.next();
+                String last_name_field = scanner.next();
+                String email_field = scanner.next();
+                String gender_field = scanner.next();
+                String points_field = scanner.next();
+               
+                pw.print(id_field + "," + first_name_field + "," + last_name_field + "," + email_field + "," + gender_field + "," + points_field);
+                while(scanner.hasNext()){
+                    temp_id = scanner.next();
+                    temp_first_name = scanner.next();
+                    temp_last_name = scanner.next();
+                    temp_email = scanner.next();
+                    temp_gender = scanner.next();
+                    temp_points = scanner.next();
+                    temp_full_name = temp_first_name + " " + temp_last_name;
+                
+
+                    boolean found_person = false;
+                    int i = 0;
+                    
+                    while(!found_person &&  i< (this.peopleList.size())){
+                        
+                        if(temp_full_name.equals(this.peopleList.get(i))){
+                            found_person = true;
+                            
+                            
+                            temp_points = temp_points.replaceAll("\\s", "");
+        
+                            int points = Integer.parseInt(temp_points) + 10;
+                            
+                            pw.println(temp_id + "," + temp_first_name + "," + temp_last_name + "," + temp_email + "," + temp_gender + "," + Integer.toString(points));
+                        }
+                        else{
+                            i++;
+                            
+                        }
+                        
+                        
+                
+                    }
+                    if(found_person == false){
+                        pw.print(temp_id + "," + temp_first_name + "," + temp_last_name + "," + temp_email + "," + temp_gender + "," + temp_points);
+                    }
+
+                }
+                scanner.close();
+                rosterReader.close();
+                pw.flush();
+                pw.close();
+                bw.close();
+                fw.close();
+                // this.roster_file.delete();
+               
+                // File dump = new File(this.roster_filepath);
+               
+                // newFile.renameTo(dump);
+                
+            }
+
+             catch (FileNotFoundException e1) {
+               
+                System.out.println("File Not Found");
+                e1.printStackTrace();
+            } catch (IOException e1) {
+                
+                System.out.println("Input Error");
+                e1.printStackTrace();
+            }
         }
     }
 
